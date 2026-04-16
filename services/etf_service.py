@@ -17,7 +17,7 @@ def get_constituents(etf_df: pd.DataFrame) -> list:
   for _, row in etf_df.iterrows():
     name = row["name"]
     weight = row["weight"]
-    latest_price = latest_price.get(name, None)
+    latest_price = latest_prices.get(name, None)
     result.append({
       "name": name,
       "weight": weight,
