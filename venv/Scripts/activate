@@ -39,17 +39,10 @@ deactivate nondestructive
 if [ "${OSTYPE:-}" = "cygwin" ] || [ "${OSTYPE:-}" = "msys" ] ; then
     # transform D:\path\to\venv to /d/path/to/venv on MSYS
     # and to /cygdrive/d/path/to/venv on Cygwin
-<<<<<<< HEAD
-    export VIRTUAL_ENV=$(cygpath "C:\Users\arash\Desktop\Projects\BMO\etf-price-monitor\backend\venv")
+    export VIRTUAL_ENV=$(cygpath "C:\Users\arash\Desktop\Projects\etf-price-monitor\venv")
 else
     # use the path as-is
-    export VIRTUAL_ENV="C:\Users\arash\Desktop\Projects\BMO\etf-price-monitor\backend\venv"
-=======
-    export VIRTUAL_ENV=$(cygpath "C:\Users\arash\Desktop\Projects\BMO\etf-price-monitor\venv")
-else
-    # use the path as-is
-    export VIRTUAL_ENV="C:\Users\arash\Desktop\Projects\BMO\etf-price-monitor\venv"
->>>>>>> master
+    export VIRTUAL_ENV="C:\Users\arash\Desktop\Projects\etf-price-monitor\venv"
 fi
 
 _OLD_VIRTUAL_PATH="$PATH"

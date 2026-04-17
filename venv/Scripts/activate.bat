@@ -8,11 +8,7 @@ if defined _OLD_CODEPAGE (
     "%SystemRoot%\System32\chcp.com" 65001 > nul
 )
 
-<<<<<<< HEAD
-set VIRTUAL_ENV=C:\Users\arash\Desktop\Projects\BMO\etf-price-monitor\backend\venv
-=======
-set VIRTUAL_ENV=C:\Users\arash\Desktop\Projects\BMO\etf-price-monitor\venv
->>>>>>> master
+set VIRTUAL_ENV=C:\Users\arash\Desktop\Projects\etf-price-monitor\venv
 
 if not defined PROMPT set PROMPT=$P$G
 
