@@ -100,3 +100,46 @@
   color: var(--color-danger);
   font-size: 14px;
 }
+
+.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.sortable:hover {
+  background: var(--color-surface-hover);
+}
+
+.sorted {
+  background: var(--color-primary-subtle);
+}
+
+.thInner {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  width: 100%;
+}
+
+.sortActive,
+.sortIdle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.sortActive {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.sortIdle {
+  color: var(--color-text-muted);
+  opacity: 0.4;
+}
+

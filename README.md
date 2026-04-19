@@ -141,7 +141,7 @@ This is computed in a single SQL aggregation query:
 ```sql
 SELECT p.date, SUM(ec.weight * p.close_price) AS etf_price
 FROM etf_constituents ec
-JOIN prices p ON p.ticker = ec.ticker
+JOIN prices p ON p.stock_name = ec.stock_name
 WHERE ec.etf_id = :etf_id
 GROUP BY p.date
 ORDER BY p.date ASC
@@ -154,7 +154,7 @@ No Python-side aggregation — pushed entirely to the database.
 ## Assumptions
 
 1. **Weights are static over time.** The spec states this explicitly — weight columns in ETF CSVs apply uniformly across all historical dates.
-2. **Prices CSV is the authoritative source** for all known tickers. Uploading an ETF with an unknown ticker is rejected with a `422` error.
+2. **Prices CSV is the authoritative source** for all known stock names. Uploading an ETF with an unknown stock_name is rejected with a `422` error.
 3. **Weight validation:** Each weight must be `> 0` and `≤ 1`. Weights don't need to sum exactly to 1.0 (floating-point rounding in the provided files makes strict enforcement unreliable).
 4. **No authentication.** Users are identified by an anonymous `session_id` cookie. This is a deliberate design choice — the session system is structured so adding JWT auth requires changing only the `get_or_create_session` dependency in `routers/etf.py`.
 5. **Single deployment unit.** All services run in Docker Compose. The architecture supports extraction into separate deployable microservices (the backend has no internal coupling between components).
@@ -166,7 +166,7 @@ No Python-side aggregation — pushed entirely to the database.
 | Concern | Current | Path to scale |
 |---------|---------|---------------|
 | DB reads | Single Postgres instance | Read replicas behind a connection pooler (PgBouncer) |
-| Price history queries | Hypertable range scan | Add `ticker` chunk index; partition by month |
+| Price history queries | Hypertable range scan | Add `stock_name` chunk index; partition by month |
 | Horizontal scaling | Single backend pod | Stateless FastAPI — scale with `docker compose --scale backend=N` or K8s HPA |
 | Session state | DB-backed cookie | Swap `get_or_create_session` dep for JWT — no other changes |
 | Price data source | Seeded CSV | Replace `02_seed.sql` with a market data ingestion job (e.g. Kafka consumer) |
