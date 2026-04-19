@@ -1,0 +1,91 @@
+/* ─────────────────────────────────────────────────────────────
+   Design tokens — single source of truth for all colours.
+   Swap the values here to re-theme the entire app.
+   ───────────────────────────────────────────────────────────── */
+:root {
+  /* Brand */
+  --color-primary:          #2563eb;
+  --color-primary-subtle:   #eff6ff;
+  --color-primary-muted:    #bfdbfe;
+
+  /* Surfaces */
+  --color-bg:               #f8fafc;
+  --color-sidebar-bg:       #ffffff;
+  --color-surface:          #f1f5f9;
+  --color-surface-elevated: #ffffff;
+  --color-surface-hover:    #f1f5f9;
+
+  /* Borders */
+  --color-border:           #e2e8f0;
+  --color-border-subtle:    #f1f5f9;
+
+  /* Text */
+  --color-text-primary:     #0f172a;
+  --color-text-secondary:   #475569;
+  --color-text-muted:       #94a3b8;
+
+  /* Semantic */
+  --color-danger:           #dc2626;
+  --color-danger-subtle:    #fef2f2;
+  --color-success:          #16a34a;
+
+  /* Chart palette — consistent, accessible */
+  --color-chart-1:          #2563eb;
+  --color-chart-2:          #7c3aed;
+  --color-chart-3:          #0891b2;
+  --color-chart-4:          #059669;
+  --color-chart-5:          #d97706;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Reset
+   ───────────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Base
+   ───────────────────────────────────────────────────────────── */
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-text-primary);
+  background: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  display: flex;
+  flex-direction: row;
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+button {
+  font-family: inherit;
+}
+
+code {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+}

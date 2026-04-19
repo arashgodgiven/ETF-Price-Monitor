@@ -19,7 +19,7 @@ SELECT create_hypertable(
 	'prices',
 	'date',
 	if_not_exists => TRUE,
-	migrate_date => TRUE
+	migrate_data => TRUE
 );
 
 CREATE INDEX IF NOT EXISTS idx_prices_stock_name_date

@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
 from app.core.database import get_db_session
-from app.models.schemas import HealthSchema
+from app.models import HealthSchema
 
 router = APIRouter(prefix="/health", tags=["Health"])
 settings = get_settings()
