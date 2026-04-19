@@ -33,10 +33,6 @@ AsyncSessionFactory = async_sessionmaker(
 
 
 async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
-    """
-    FastAPI dependency — yields a transactional async DB session.
-    Rolls back automatically on exception, always closes on exit.
-    """
     async with AsyncSessionFactory() as session:
         try:
             yield session
