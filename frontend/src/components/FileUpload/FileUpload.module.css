@@ -1,0 +1,103 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 28px 20px;
+  border: 2px dashed var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  min-height: 130px;
+  text-align: center;
+}
+
+.dropzone:hover,
+.dropzone:focus-visible {
+  border-color: var(--color-primary);
+  background: var(--color-primary-subtle);
+  outline: none;
+}
+
+.dragging {
+  border-color: var(--color-primary);
+  background: var(--color-primary-subtle);
+}
+
+.loading {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.hiddenInput {
+  display: none;
+}
+
+.icon {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.primaryText {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.link {
+  color: var(--color-primary);
+  font-weight: 500;
+  text-decoration: underline;
+}
+
+.secondaryText {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.secondaryText code {
+  font-family: monospace;
+  background: var(--color-border);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.uploading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.error {
+  font-size: 13px;
+  color: var(--color-danger);
+  margin: 0;
+  padding: 8px 12px;
+  background: var(--color-danger-subtle);
+  border-radius: 6px;
+}
