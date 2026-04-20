@@ -35,10 +35,11 @@ def get_or_create_session(
 	new_id = uuid.uuid4()
 	response.set_cookie(
 		key=SESSION_COOKIE,
-		value=str(new_id),
-		httponly=True,
-		samesite="lax",
-		max_age=60 * 60 * 24 * 30,
+    value=str(new_id),
+    httponly=True,
+    samesite="none",
+    secure=True,
+    max_age=60 * 60 * 24 * 30,
 	)
 	return new_id
 	
