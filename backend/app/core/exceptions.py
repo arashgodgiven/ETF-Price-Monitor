@@ -47,7 +47,7 @@ class ETFNotFoundError(NotFoundError):
 
 def register_exception_handlers(app: FastAPI) -> None:
 
-	@aapp.exception_handler(ETFMonitorError)
+	@app.exception_handler(ETFMonitorError)
 	async def etf_monitor_error_handler(
 		request: Request, exc: ETFMonitorError
 	) -> JSONResponse:
@@ -69,9 +69,9 @@ def register_exception_handlers(app: FastAPI) -> None:
 		request: Request, exc: Exception
 	) -> JSONResponse:
 		logger.error(
-			"Unhandled exception",
-			extraa={"error": str(exc), "path": request.url.path},
-			exc_info=True,
+				"Unhandled exception",
+				extra={"error": str(exc), "path": request.url.path},
+				exc_info=True,
 		)
 		return JSONResponse(
 			stats_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

@@ -9,7 +9,7 @@ from app.core.database import get_db_session
 from app.core.exceptions import InvalidCSVError
 from app.core.logging import get_logger
 from app.models import(
-	ETFPriceHistorySchema,
+		ETFPriceHistorySchema,
     ETFSummarySchema,
     ETFTopHoldingsSchema,
 )
@@ -28,7 +28,7 @@ def get_or_create_session(
 ) -> uuid.UUID:
 	if session_id:
 		try:
-			return uuid.UID(session_id)
+			return uuid.UUID(session_id)
 		except ValueError:
 			pass
 
@@ -46,7 +46,7 @@ def get_or_create_session(
 @router.post(
 	"/upload",
 	response_model=ETFSummarySchema,
-	status_code=status.HTTP_201_CRAETED,
+	status_code=status.HTTP_201_CREATED,
 	summary="Upload an ETF CSV file",
 )
 async def upload_etf(
@@ -86,7 +86,7 @@ async def get_session_etfs(
 
 @router.get(
 	"/{etf_id}",
-	response_mdoel=ETFSummarySchema,
+	response_model=ETFSummarySchema,
 	summary="Get ETF summary with constituents and latest prices",
 )
 async def get_etf_summary(
@@ -98,7 +98,7 @@ async def get_etf_summary(
 
 
 @router.get(
-	"/{etf_id}/pricce-history",
+	"/{etf_id}/price-history",
 	response_model=ETFPriceHistorySchema,
 	summary="Get reconstructed ETF price time series",
 )
@@ -126,3 +126,34 @@ async def get_top_holdings(
 		raise InvalidCSVError("limit must be between 1 and 20.")
 	service = ETFService(db)
 	return await service.get_top_holdings(etf_id, limit)
+
+
+@router.delete(
+    "/{etf_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete an ETF from the current session",
+)
+async def delete_etf(
+    etf_id: uuid.UUID,
+    session_id: uuid.UUID = Depends(get_or_create_session),
+    db: AsyncSession = Depends(get_db_session),
+) -> None:
+    service = ETFService(db)
+    await service.delete_etf(etf_id, session_id)
+
+
+@router.get(
+    "/stock/{stock_name}/price-history",
+    response_model=ETFPriceHistorySchema,
+    summary="Get price history for a single stock",
+)
+async def get_stock_price_history(
+    stock_name: str,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    db: AsyncSession = Depends(get_db_session),
+) -> ETFPriceHistorySchema:
+    service = ETFService(db)
+    return await service.get_stock_price_history(
+        stock_name, date_from, date_to
+    )

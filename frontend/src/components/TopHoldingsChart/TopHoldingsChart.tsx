@@ -11,6 +11,8 @@ import {
 import { useGetTopHoldingsQuery } from "@/features/etf/etfApiSlice";
 import { formatCurrency, formatDate, formatPercent } from "@/utils/formatters";
 import styles from "./TopHoldingsChart.module.css";
+import { useAppDispatch } from "@/app/hooks";
+import { selectStock } from "@/features/etf/etfSlice";
 
 interface Props {
   etfId: string;
@@ -39,19 +41,26 @@ export function TopHoldingsChart({ etfId, limit = 5 }: Props) {
     latest_price: h.latest_price,
   }));
 
+  const dispatch = useAppDispatch();
+
+  const handleBarDoubleClick = (data: { ticker?: string; stock_name?: string }) => {
+    const name = data.stock_name ?? data.ticker ?? null;
+    if (name) dispatch(selectStock(name));
+  };
+
   return (
     <div className={styles.wrapper}>
       <div className={styles.header}>
         <div>
           <h2 className={styles.title}>
-            {data.etf_name} — Top {limit} Holdings
+            Top {limit} Holdings
           </h2>
           <p className={styles.subtitle}>As of {formatDate(data.as_of_date)}</p>
         </div>
       </div>
 
-      <ResponsiveContainer width="100%" height={260}>
-        <BarChart data={chartData} margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
+      <ResponsiveContainer width="100%" height={360}>
+        <BarChart data={chartData} margin={{ top: 40, right: 0, left: -30, bottom: 4 }}>
           <CartesianGrid
             strokeDasharray="3 3"
             vertical={false}
@@ -85,7 +94,13 @@ export function TopHoldingsChart({ etfId, limit = 5 }: Props) {
               );
             }}
           />
-          <Bar dataKey="holding_size" radius={[4, 4, 0, 0]} maxBarSize={64}>
+          <Bar 
+            dataKey="holding_size"
+            radius={[4, 4, 0, 0]}
+            maxBarSize={64}
+            onDoubleClick={handleBarDoubleClick}
+            style={{ cursor: "pointer" }}
+          >
             {chartData.map((_, i) => (
               <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />
             ))}

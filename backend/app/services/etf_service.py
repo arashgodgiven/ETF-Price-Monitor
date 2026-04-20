@@ -3,7 +3,6 @@ import uuid
 from datetime import date
 
 import pandas as pd
-from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import (
@@ -12,7 +11,7 @@ from app.core.exceptions import (
     UnknownStockNameError,
 )
 from app.core.logging import get_logger
-from app.models.schemas import (
+from app.models import (
     ConstituentSchema,
     ETFPriceHistorySchema,
     ETFSummarySchema,
@@ -20,18 +19,16 @@ from app.models.schemas import (
     PricePointSchema,
     TopHoldingSchema,
 )
+from app.repositories.etf_repository import ETFRepository
 
 logger = get_logger(__name__)
 
-# ─────────────────────────────────────────────
-# CSV validation constants
-# ─────────────────────────────────────────────
 REQUIRED_COLUMNS = {"name", "weight"}
 
 
 class ETFService:
     def __init__(self, db: AsyncSession) -> None:
-        self._db = db
+        self._repo = ETFRepository(db)
 
     # ─────────────────────────────────────────
     # Upload
@@ -43,49 +40,31 @@ class ETFService:
         filename: str,
         session_id: uuid.UUID,
     ) -> ETFSummarySchema:
-        """
-        Parse, validate, and persist an uploaded ETF CSV.
-        Returns the saved ETF with constituent latest prices attached.
-        """
         df = self._parse_and_validate_csv(file_bytes, filename)
         stock_names = df["name"].str.upper().tolist()
 
-        # Validate all stock names exist in the price DB
-        known_stock_names = await self._get_known_stock_names()
+        known_stock_names = await self._repo.get_known_stock_names()
         unknown = set(stock_names) - known_stock_names
         if unknown:
             raise UnknownStockNameError(
                 f"Stock names not found in price database: {sorted(unknown)}"
             )
 
-        # Derive ETF name from filename (strip extension)
         etf_name = filename.rsplit(".", 1)[0].upper()
-
-        # Validate ETF name length
         MAX_ETF_NAME_LENGTH = 50
         if len(etf_name) > MAX_ETF_NAME_LENGTH:
             raise InvalidCSVError(
-                f"ETF name derived from filename must be {MAX_ETF_NAME_LENGTH} "
-                f"characters or fewer. Got: '{etf_name}' ({len(etf_name)} characters). "
+                f"ETF name must be {MAX_ETF_NAME_LENGTH} characters or fewer. "
+                f"Got: '{etf_name}' ({len(etf_name)} characters). "
                 f"Please rename your file."
             )
 
-        # Persist ETF + constituents in a single transaction
         etf_id = uuid.uuid4()
-        await self._db.execute(
-            text(
-                "INSERT INTO etfs (id, session_id, name) VALUES (:id, :session_id, :name)"
-            ),
-            {"id": str(etf_id), "session_id": str(session_id), "name": etf_name},
-        )
-        await self._db.execute(
-            text(
-                "INSERT INTO etf_constituents (etf_id, stock_name, weight) "
-                "VALUES (:etf_id, :stock_name, :weight)"
-            ),
+        await self._repo.insert_etf(etf_id, session_id, etf_name)
+        await self._repo.insert_constituents(
+            etf_id,
             [
                 {
-                    "etf_id": str(etf_id),
                     "stock_name": row["name"].upper(),
                     "weight": float(row["weight"]),
                 }
@@ -105,24 +84,27 @@ class ETFService:
         return await self.get_etf_summary(etf_id)
 
     # ─────────────────────────────────────────
-    # Summary (constituents + latest prices)
+    # Summary
     # ─────────────────────────────────────────
 
     async def get_etf_summary(self, etf_id: uuid.UUID) -> ETFSummarySchema:
-        result = await self._db.execute(
-            text("SELECT id, name FROM etfs WHERE id = :id"),
-            {"id": str(etf_id)},
-        )
-        row = result.mappings().first()
+        row = await self._repo.get_etf_by_id(etf_id)
         if not row:
             raise ETFNotFoundError(f"ETF {etf_id} not found.")
 
-        constituents = await self._get_constituents_with_latest_price(etf_id)
+        constituents = await self._repo.get_constituents_with_latest_price(etf_id)
 
         return ETFSummarySchema(
             id=row["id"],
             name=row["name"],
-            constituents=constituents,
+            constituents=[
+                ConstituentSchema(
+                    stock_name=c["stock_name"],
+                    weight=float(c["weight"]),
+                    latest_price=float(c["latest_price"]) if c["latest_price"] else None,
+                )
+                for c in constituents
+            ],
         )
 
     # ─────────────────────────────────────────
@@ -135,42 +117,20 @@ class ETFService:
         date_from: date | None = None,
         date_to: date | None = None,
     ) -> ETFPriceHistorySchema:
-        """
-        Reconstruct the ETF price time series as:
-            ETF_price(t) = SUM(weight_i * price_i(t))
-        using a single SQL query for efficiency.
-        """
-        etf_row = await self._get_etf_or_raise(etf_id)
+        row = await self._repo.get_etf_by_id(etf_id)
+        if not row:
+            raise ETFNotFoundError(f"ETF {etf_id} not found.")
 
-        date_filter = ""
-        params: dict = {"etf_id": str(etf_id)}
-        if date_from:
-            date_filter += " AND p.date >= :date_from"
-            params["date_from"] = date_from
-        if date_to:
-            date_filter += " AND p.date <= :date_to"
-            params["date_to"] = date_to
-
-        query = text(f"""
-            SELECT
-                p.date,
-                SUM(ec.weight * p.close_price) AS etf_price
-            FROM etf_constituents ec
-            JOIN prices p ON p.stock_name = ec.stock_name
-            WHERE ec.etf_id = :etf_id
-            {date_filter}
-            GROUP BY p.date
-            ORDER BY p.date ASC
-        """)
-
-        result = await self._db.execute(query, params)
-        rows = result.mappings().all()
+        rows = await self._repo.get_price_history(etf_id, date_from, date_to)
 
         return ETFPriceHistorySchema(
             etf_id=etf_id,
-            etf_name=etf_row["name"],
+            etf_name=row["name"],
             series=[
-                PricePointSchema(date=r["date"], price=round(float(r["etf_price"]), 4))
+                PricePointSchema(
+                    date=r["date"],
+                    price=round(float(r["etf_price"]), 4),
+                )
                 for r in rows
             ],
         )
@@ -182,40 +142,17 @@ class ETFService:
     async def get_top_holdings(
         self, etf_id: uuid.UUID, limit: int = 5
     ) -> ETFTopHoldingsSchema:
-        """
-        Top N holdings by holding size = weight * latest_close_price.
-        Latest close = most recent date in the prices table.
-        """
-        etf_row = await self._get_etf_or_raise(etf_id)
+        row = await self._repo.get_etf_by_id(etf_id)
+        if not row:
+            raise ETFNotFoundError(f"ETF {etf_id} not found.")
 
-        result = await self._db.execute(
-            text("""
-                WITH latest AS (
-                    SELECT stock_name, close_price, date
-                    FROM prices
-                    WHERE date = (SELECT MAX(date) FROM prices)
-                )
-                SELECT
-                    ec.stock_name,
-                    ec.weight,
-                    l.close_price       AS latest_price,
-                    l.date              AS as_of_date,
-                    ec.weight * l.close_price AS holding_size
-                FROM etf_constituents ec
-                JOIN latest l ON l.stock_name = ec.stock_name
-                WHERE ec.etf_id = :etf_id
-                ORDER BY holding_size DESC
-                LIMIT :limit
-            """),
-            {"etf_id": str(etf_id), "limit": limit},
-        )
-        rows = result.mappings().all()
-
-        as_of = rows[0]["as_of_date"] if rows else date.today()
+        rows = await self._repo.get_top_holdings(etf_id, limit)
+        from datetime import date as date_type
+        as_of = rows[0]["as_of_date"] if rows else date_type.today()
 
         return ETFTopHoldingsSchema(
             etf_id=etf_id,
-            etf_name=etf_row["name"],
+            etf_name=row["name"],
             as_of_date=as_of,
             holdings=[
                 TopHoldingSchema(
@@ -232,21 +169,22 @@ class ETFService:
     # Session ETFs
     # ─────────────────────────────────────────
 
-    async def get_session_etfs(self, session_id: uuid.UUID) -> list[ETFSummarySchema]:
-        result = await self._db.execute(
-            text(
-                "SELECT id FROM etfs WHERE session_id = :sid ORDER BY uploaded_at DESC"
-            ),
-            {"sid": str(session_id)},
-        )
-        etf_ids = [row["id"] for row in result.mappings().all()]
-        return [await self.get_etf_summary(uuid.UUID(str(eid))) for eid in etf_ids]
+    async def get_session_etfs(
+        self, session_id: uuid.UUID
+    ) -> list[ETFSummarySchema]:
+        rows = await self._repo.get_etfs_by_session(session_id)
+        return [
+            await self.get_etf_summary(uuid.UUID(str(r["id"])))
+            for r in rows
+        ]
 
     # ─────────────────────────────────────────
-    # Private helpers
+    # Private — CSV validation
     # ─────────────────────────────────────────
 
-    def _parse_and_validate_csv(self, file_bytes: bytes, filename: str) -> pd.DataFrame:
+    def _parse_and_validate_csv(
+        self, file_bytes: bytes, filename: str
+    ) -> pd.DataFrame:
         try:
             df = pd.read_csv(io.BytesIO(file_bytes))
         except Exception as exc:
@@ -258,76 +196,77 @@ class ETFService:
         if missing:
             raise InvalidCSVError(
                 f"CSV missing required columns: {sorted(missing)}. "
-                f"Expected columns: {sorted(REQUIRED_COLUMNS)}"
+                f"Expected: {sorted(REQUIRED_COLUMNS)}"
             )
 
         if df.empty:
             raise InvalidCSVError("CSV contains no data rows.")
 
         if df["weight"].isnull().any() or df["name"].isnull().any():
-            raise InvalidCSVError("CSV contains null values in 'name' or 'weight'.")
+            raise InvalidCSVError(
+                "CSV contains null values in 'name' or 'weight'."
+            )
 
         df["weight"] = pd.to_numeric(df["weight"], errors="coerce")
         if df["weight"].isnull().any():
-            raise InvalidCSVError("'weight' column contains non-numeric values.")
+            raise InvalidCSVError(
+                "'weight' column contains non-numeric values."
+            )
 
         invalid_weights = df[(df["weight"] <= 0) | (df["weight"] > 1)]
         if not invalid_weights.empty:
-            raise InvalidCSVError("All weights must be between 0 (exclusive) and 1 (inclusive).")
+            raise InvalidCSVError(
+                "All weights must be between 0 (exclusive) and 1 (inclusive)."
+            )
 
-        # Stock Name length validation
         MAX_STOCK_NAME_LENGTH = 20
         too_long = df[df["name"].str.len() > MAX_STOCK_NAME_LENGTH]["name"].tolist()
         if too_long:
             raise InvalidCSVError(
-                f"Stock name symbols must be {MAX_STOCK_NAME_LENGTH} characters or fewer. "
+                f"Stock names must be {MAX_STOCK_NAME_LENGTH} characters or fewer. "
                 f"Found: {too_long}"
             )
 
         return df[["name", "weight"]].copy()
+    
+    # ─────────────────────────────────────────
+    # Delete ETF
+    # ─────────────────────────────────────────
 
-    async def _get_known_stock_names(self) -> set[str]:
-        result = await self._db.execute(
-            text("SELECT DISTINCT stock_name FROM prices")
-        )
-        return {row["stock_name"] for row in result.mappings().all()}
-
-    async def _get_etf_or_raise(self, etf_id: uuid.UUID) -> dict:
-        result = await self._db.execute(
-            text("SELECT id, name FROM etfs WHERE id = :id"),
-            {"id": str(etf_id)},
-        )
-        row = result.mappings().first()
-        if not row:
-            raise ETFNotFoundError(f"ETF {etf_id} not found.")
-        return dict(row)
-
-    async def _get_constituents_with_latest_price(
-        self, etf_id: uuid.UUID
-    ) -> list[ConstituentSchema]:
-        result = await self._db.execute(
-            text("""
-                WITH latest AS (
-                    SELECT stock_name, close_price
-                    FROM prices
-                    WHERE date = (SELECT MAX(date) FROM prices)
-                )
-                SELECT
-                    ec.stock_name,
-                    ec.weight,
-                    l.close_price AS latest_price
-                FROM etf_constituents ec
-                LEFT JOIN latest l ON l.stock_name = ec.stock_name
-                WHERE ec.etf_id = :etf_id
-                ORDER BY ec.stock_name
-            """),
-            {"etf_id": str(etf_id)},
-        )
-        return [
-            ConstituentSchema(
-                stock_name=r["stock_name"],
-                weight=float(r["weight"]),
-                latest_price=float(r["latest_price"]) if r["latest_price"] else None,
+    async def delete_etf(
+        self, etf_id: uuid.UUID, session_id: uuid.UUID
+    ) -> None:
+        deleted = await self._repo.delete_etf(etf_id, session_id)
+        if not deleted:
+            raise ETFNotFoundError(
+                f"ETF {etf_id} not found or does not belong to this session."
             )
-            for r in result.mappings().all()
-        ]
+        logger.info(
+            "ETF deleted",
+            extra={"etf_id": str(etf_id)},
+        )
+
+    # ─────────────────────────────────────────
+    # Get Stock Price History
+    # ─────────────────────────────────────────
+
+    async def get_stock_price_history(
+        self,
+        stock_name: str,
+        date_from: date | None = None,
+        date_to: date | None = None,
+    ) -> ETFPriceHistorySchema:
+        rows = await self._repo.get_stock_price_history(
+            stock_name, date_from, date_to
+        )
+        return ETFPriceHistorySchema(
+            etf_id=uuid.uuid4(),  # placeholder — not an ETF
+            etf_name=stock_name,
+            series=[
+                PricePointSchema(
+                    date=r["date"],
+                    price=round(float(r["close_price"]), 4),
+                )
+                for r in rows
+            ],
+        )
