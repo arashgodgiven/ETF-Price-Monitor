@@ -7,7 +7,7 @@
 .header {
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: space-between;
 }
 
 .title {
@@ -28,8 +28,10 @@
 
 .tableWrapper {
   overflow-x: auto;
+  overflow-y: auto;
   border-radius: 8px;
   border: 1px solid var(--color-border);
+  max-height: 500px;
 }
 
 .table {
@@ -41,10 +43,14 @@
 .table thead tr {
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .table th {
-  padding: 10px 16px;
+  padding: 0 16px;
+  height: 41px;
   text-align: left;
   font-size: 12px;
   font-weight: 600;
@@ -52,12 +58,15 @@
   letter-spacing: 0.05em;
   color: var(--color-text-muted);
   white-space: nowrap;
+  vertical-align: middle;
 }
 
 .table td {
-  padding: 10px 16px;
+  padding: 0 16px;
+  height: 41px;
   border-bottom: 1px solid var(--color-border-subtle);
   color: var(--color-text-primary);
+  vertical-align: middle;
 }
 
 .table tbody tr:last-child td {
@@ -70,9 +79,10 @@
 
 .right {
   text-align: right !important;
+  padding-right: 70px !important;
 }
 
-.ticker {
+.stock_name {
   font-family: monospace;
   font-size: 13px;
   font-weight: 600;
@@ -100,6 +110,37 @@
   color: var(--color-danger);
   font-size: 14px;
 }
+
+
+
+
+.table th:nth-child(1) {
+  width: 16px;
+  min-width: 16px;
+  max-width: 16px;
+  padding: 0 !important;
+}
+
+.table th:nth-child(2) {
+  width: 140px;
+  min-width: 140px;
+  max-width: 140px;
+}
+
+.table th:nth-child(3) {
+  width: 160px;
+  min-width: 160px;
+  max-width: 160px;
+}
+
+.table th:nth-child(4) {
+  width: 180px;
+  min-width: 180px;
+  max-width: 180px;
+}
+
+
+
 
 .sortable {
   cursor: pointer;
@@ -143,3 +184,211 @@
   opacity: 0.4;
 }
 
+
+
+
+.filterBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: var(--color-primary-subtle);
+  border: 1px solid var(--color-primary-muted);
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.filterBarText {
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+.clearBtn {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-primary);
+  background: none;
+  border: 1px solid var(--color-primary-muted);
+  border-radius: 4px;
+  padding: 2px 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.clearBtn:hover {
+  background: var(--color-primary-muted);
+}
+
+.searchBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-size: 11px;
+  opacity: 0.4;
+  transition: opacity 0.15s;
+  line-height: 1;
+}
+
+.searchBtn:hover {
+  opacity: 1;
+}
+
+.searchBtnActive {
+  opacity: 1;
+  filter: hue-rotate(200deg) saturate(2);
+}
+
+.searchCell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.searchCellIcon {
+  font-size: 11px;
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  max-width: 100px;
+  border: 1px solid var(--color-primary-muted);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 12px;
+  font-family: inherit;
+  background: var(--color-surface-elevated);
+  color: var(--color-text-primary);
+  outline: none;
+}
+
+.searchInput:focus {
+  border-color: var(--color-primary);
+}
+
+.rangeInput {
+  width: 52px;
+  border: 1px solid var(--color-primary-muted);
+  border-radius: 4px;
+  padding: 2px 4px;
+  font-size: 11px;
+  font-family: inherit;
+  background: var(--color-surface-elevated);
+  color: var(--color-text-primary);
+  outline: none;
+}
+
+.rangeInput:focus {
+  border-color: var(--color-primary);
+}
+
+/* hide number input spinners */
+.rangeInput::-webkit-outer-spin-button,
+.rangeInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+}
+
+.rangeSep {
+  color: var(--color-text-muted);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+
+.closeBtn:hover {
+  color: var(--color-danger);
+}
+
+.noResults {
+  text-align: center;
+  padding: 24px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-style: italic;
+}
+
+
+
+
+.eyeBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 1px 3px;
+  border-radius: 3px;
+  font-size: 15px;
+  opacity: 0;
+  transition: opacity 0.15s;
+  flex-shrink: 0;
+  line-height: 1;
+  width: 20px;
+  text-align: center;
+}
+
+th:hover .eyeBtn {
+  opacity: 0.4;
+}
+
+.eyeBtn:hover {
+  opacity: 1 !important;
+}
+
+
+
+
+.dragHeader {
+  width: 16px;
+  min-width: 16px;
+  max-width: 16px;
+  padding: 0 !important;
+}
+
+.dragCell {
+  width: 16px;
+  min-width: 16px;
+  max-width: 16px;
+  padding: 0 !important;
+  text-align: center;
+}
+
+.dragHandle {
+  background: none;
+  border: none;
+  cursor: grab;
+  color: var(--color-text-muted);
+  font-size: 16px;
+  padding: 2px 0px 0px 15px;
+  margin: 0;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+  line-height: 1;
+  width: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dragHandle:active {
+  cursor: grabbing;
+}
+
+tr:hover .dragHandle {
+  opacity: 1;
+}
