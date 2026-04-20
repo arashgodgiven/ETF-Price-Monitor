@@ -58,8 +58,6 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
 }
 
 .card {
@@ -81,4 +79,114 @@
   .fullWidth {
     grid-column: 1;
   }
+}
+
+
+
+
+.content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.etfHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: linear-gradient(
+    135deg,
+    var(--color-surface-elevated) 0%,
+    var(--color-primary-subtle) 100%
+  );
+}
+
+.etfHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.etfIconBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: var(--color-primary-subtle);
+  border: 1px solid var(--color-primary-muted);
+  border-radius: 12px;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.etfName {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: -0.01em;
+}
+
+.etfMeta {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.etfMetaDot {
+  color: var(--color-border);
+}
+
+.etfHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.etfStat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.etfStatLabel {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.etfStatValue {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-primary);
+  letter-spacing: -0.01em;
+}
+
+.etfStatDivider {
+  width: 1px;
+  height: 32px;
+  background: var(--color-border);
+}
+
+
+
+.etfStatHigh {
+  color: var(--color-success);
+}
+
+.etfStatLow {
+  color: var(--color-danger);
 }

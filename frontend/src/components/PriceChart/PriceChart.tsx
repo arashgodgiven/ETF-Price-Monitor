@@ -131,7 +131,7 @@ export function PriceChart({ etfId }: Props) {
             <h2 className={styles.title}>
               {selectedStockName
                 ? `${selectedStockName} — Price History`
-                : `${data.etf_name} — Price History`}
+                : "Price History"}
             </h2>
             {selectedStockName && (
               <button
