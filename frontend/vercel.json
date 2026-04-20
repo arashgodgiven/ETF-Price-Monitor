@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://etf-price-monitor.onrender.com/api/:path*"
+    }
+  ]
+}
