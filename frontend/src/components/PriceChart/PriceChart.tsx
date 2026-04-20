@@ -8,8 +8,10 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { useState, useCallback } from "react";
-import { useGetPriceHistoryQuery } from "@/features/etf/etfApiSlice";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { useGetPriceHistoryQuery, useGetStockPriceHistoryQuery } from "@/features/etf/etfApiSlice";
+import { useAppDispatch, useAppSelector } from "@/app/hooks";
+import { clearSelectedStock, selectSelectedStockName } from "@/features/etf/etfSlice";
 import { formatCurrency, formatDate, formatShortDate } from "@/utils/formatters";
 import type { PricePoint } from "@/types/etf";
 import styles from "./PriceChart.module.css";
@@ -35,8 +37,35 @@ const INITIAL_ZOOM: ZoomState = {
 };
 
 export function PriceChart({ etfId }: Props) {
-  const { data, isLoading, isError } = useGetPriceHistoryQuery({ etfId });
+  const dispatch = useAppDispatch();
+  const selectedStockName = useAppSelector(selectSelectedStockName);
   const [zoom, setZoom] = useState<ZoomState>(INITIAL_ZOOM);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // Reset zoom when switching between ETF and stock view
+  useEffect(() => {
+    setZoom(INITIAL_ZOOM);
+  }, [selectedStockName, etfId]);
+
+  // Scroll to chart when stock is selected
+  useEffect(() => {
+    if (selectedStockName && wrapperRef.current) {
+      wrapperRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [selectedStockName]);
+
+  const etfHistory = useGetPriceHistoryQuery(
+    { etfId },
+    { skip: !!selectedStockName }
+  );
+
+  const stockHistory = useGetStockPriceHistoryQuery(
+    { stockName: selectedStockName ?? "" },
+    { skip: !selectedStockName }
+  );
+
+  const { data, isLoading, isError } =
+    selectedStockName ? stockHistory : etfHistory;
 
   const visibleData: PricePoint[] = (() => {
     if (!data?.series) return [];
@@ -81,7 +110,6 @@ export function PriceChart({ etfId }: Props) {
   }, []);
 
   const resetZoom = () => setZoom(INITIAL_ZOOM);
-
   const isZoomed = !!(zoom.zoomedFrom || zoom.zoomedTo);
 
   const priceMin = visibleData.length
@@ -96,10 +124,24 @@ export function PriceChart({ etfId }: Props) {
     return <div className={styles.stateError}>Failed to load price history.</div>;
 
   return (
-    <div className={styles.wrapper}>
+    <div className={styles.wrapper} ref={wrapperRef}>
       <div className={styles.header}>
         <div>
-          <h2 className={styles.title}>{data.etf_name} — Price History</h2>
+          <div className={styles.titleRow}>
+            <h2 className={styles.title}>
+              {selectedStockName
+                ? `${selectedStockName} — Price History`
+                : `${data.etf_name} — Price History`}
+            </h2>
+            {selectedStockName && (
+              <button
+                className={styles.backBtn}
+                onClick={() => dispatch(clearSelectedStock())}
+              >
+                ← Back to ETF
+              </button>
+            )}
+          </div>
           <p className={styles.subtitle}>
             {data.series.length} trading days •{" "}
             {isZoomed ? (
@@ -161,7 +203,7 @@ export function PriceChart({ etfId }: Props) {
           />
 
           <Tooltip
-            formatter={(value: number) => [formatCurrency(value), "ETF Price"]}
+            formatter={(value: number) => [formatCurrency(value), selectedStockName ?? "ETF Price"]}
             labelFormatter={(label: string) => formatDate(label)}
             contentStyle={{
               background: "var(--color-surface-elevated)",

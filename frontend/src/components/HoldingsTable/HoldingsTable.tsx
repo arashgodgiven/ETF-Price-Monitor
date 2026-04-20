@@ -18,6 +18,8 @@ import { useGetETFSummaryQuery } from "@/features/etf/etfApiSlice";
 import { formatCurrency, formatPercent } from "@/utils/formatters";
 import type { Constituent } from "@/types/etf";
 import styles from "./HoldingsTable.module.css";
+import { useAppDispatch } from "@/app/hooks";
+import { selectStock } from "@/features/etf/etfSlice";
 
 interface Props {
   etfId: string;
@@ -92,9 +94,11 @@ function SearchIconButton({
 function SortableRow({
   constituent,
   colVisible,
+  onDoubleClick,
 }: {
   constituent: Constituent;
   colVisible: ColumnVisibility;
+  onDoubleClick: (stockName: string) => void;
 }) {
   const {
     attributes,
@@ -113,7 +117,12 @@ function SortableRow({
   };
 
   return (
-    <tr ref={setNodeRef} style={style}>
+    <tr 
+      ref={setNodeRef} 
+      style={style}
+      onDoubleClick={() => onDoubleClick(constituent.stock_name)}
+      className={styles.clickableRow}
+    >
       <td className={styles.dragCell}>
         <button
           className={styles.dragHandle}
@@ -171,6 +180,8 @@ export function HoldingsTable({ etfId }: Props) {
       activationConstraint: { distance: 5 },
     })
   );
+
+  const dispatch = useAppDispatch();
 
   // Reset manual order when ETF changes
   useEffect(() => {
@@ -561,6 +572,7 @@ export function HoldingsTable({ etfId }: Props) {
                       key={c.stock_name}
                       constituent={c}
                       colVisible={colVisible}
+                      onDoubleClick={(stockName) => dispatch(selectStock(stockName))}
                     />
                   ))
                 )}

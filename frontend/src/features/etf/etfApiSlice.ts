@@ -43,7 +43,7 @@ export const etfApi = createApi({
       providesTags: (_result, _error, id) => [{ type: "ETF", id }],
     }),
 
-    // Price History ------------------------------------------
+    // ETF Price History --------------------------------------
     getPriceHistory: builder.query<
       ETFPriceHistory,
       { etfId: string; dateFrom?: string; dateTo?: string}
@@ -80,6 +80,20 @@ export const etfApi = createApi({
       }),
       invalidatesTags: ["Session"],
     }),
+
+    // Stock Price History ------------------------------------
+    getStockPriceHistory: builder.query<
+      ETFPriceHistory,
+      { stockName: string; dateFrom?: string; dateTo?: string }
+    >({
+      query: ({ stockName, dateFrom, dateTo }) => {
+        const params = new URLSearchParams();
+        if (dateFrom) params.set("date_from", dateFrom);
+        if (dateTo) params.set("date_to", dateTo);
+        const qs = params.toString();
+        return `/etf/stock/${stockName}/price-history${qs ? `?${qs}` : ""}`;
+      },
+    }),
   }),
 });
 
@@ -91,4 +105,5 @@ export const {
   useGetPriceHistoryQuery,
   useGetTopHoldingsQuery,
   useDeleteETFMutation,
+  useGetStockPriceHistoryQuery,
 } = etfApi;

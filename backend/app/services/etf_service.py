@@ -245,3 +245,28 @@ class ETFService:
             "ETF deleted",
             extra={"etf_id": str(etf_id)},
         )
+
+    # ─────────────────────────────────────────
+    # Get Stock Price History
+    # ─────────────────────────────────────────
+
+    async def get_stock_price_history(
+        self,
+        stock_name: str,
+        date_from: date | None = None,
+        date_to: date | None = None,
+    ) -> ETFPriceHistorySchema:
+        rows = await self._repo.get_stock_price_history(
+            stock_name, date_from, date_to
+        )
+        return ETFPriceHistorySchema(
+            etf_id=uuid.uuid4(),  # placeholder — not an ETF
+            etf_name=stock_name,
+            series=[
+                PricePointSchema(
+                    date=r["date"],
+                    price=round(float(r["close_price"]), 4),
+                )
+                for r in rows
+            ],
+        )

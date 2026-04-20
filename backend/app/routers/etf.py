@@ -140,3 +140,20 @@ async def delete_etf(
 ) -> None:
     service = ETFService(db)
     await service.delete_etf(etf_id, session_id)
+
+
+@router.get(
+    "/stock/{stock_name}/price-history",
+    response_model=ETFPriceHistorySchema,
+    summary="Get price history for a single stock",
+)
+async def get_stock_price_history(
+    stock_name: str,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    db: AsyncSession = Depends(get_db_session),
+) -> ETFPriceHistorySchema:
+    service = ETFService(db)
+    return await service.get_stock_price_history(
+        stock_name, date_from, date_to
+    )

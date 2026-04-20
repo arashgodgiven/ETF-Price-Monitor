@@ -19,6 +19,7 @@ class ETFRepository:
         )
         return {row["stock_name"] for row in result.mappings().all()}
 
+
     async def insert_etf(
         self,
         etf_id: uuid.UUID,
@@ -32,6 +33,7 @@ class ETFRepository:
             ),
             {"id": str(etf_id), "session_id": str(session_id), "name": name},
         )
+
 
     async def insert_constituents(
         self,
@@ -53,6 +55,7 @@ class ETFRepository:
             ],
         )
 
+
     async def get_etf_by_id(self, etf_id: uuid.UUID) -> dict | None:
         result = await self._db.execute(
             text("SELECT id, name FROM etfs WHERE id = :id"),
@@ -60,6 +63,7 @@ class ETFRepository:
         )
         row = result.mappings().first()
         return dict(row) if row else None
+
 
     async def get_etfs_by_session(self, session_id: uuid.UUID) -> list[dict]:
         result = await self._db.execute(
@@ -71,6 +75,7 @@ class ETFRepository:
             {"sid": str(session_id)},
         )
         return [dict(row) for row in result.mappings().all()]
+
 
     async def get_constituents_with_latest_price(
         self, etf_id: uuid.UUID
@@ -94,6 +99,7 @@ class ETFRepository:
             {"etf_id": str(etf_id)},
         )
         return [dict(row) for row in result.mappings().all()]
+
 
     async def get_price_history(
         self,
@@ -125,6 +131,7 @@ class ETFRepository:
             params,
         )
         return [dict(row) for row in result.mappings().all()]
+
 
     async def get_top_holdings(
         self, etf_id: uuid.UUID, limit: int = 5
@@ -162,3 +169,31 @@ class ETFRepository:
             {"id": str(etf_id), "session_id": str(session_id)},
         )
         return result.first() is not None
+    
+
+    async def get_stock_price_history(
+        self,
+        stock_name: str,
+        date_from: date | None = None,
+        date_to: date | None = None,
+    ) -> list[dict]:
+        date_filter = ""
+        params: dict = {"stock_name": stock_name}
+        if date_from:
+            date_filter += " AND date >= :date_from"
+            params["date_from"] = date_from
+        if date_to:
+            date_filter += " AND date <= :date_to"
+            params["date_to"] = date_to
+
+        result = await self._db.execute(
+            text(f"""
+                SELECT date, close_price
+                FROM prices
+                WHERE stock_name = :stock_name
+                {date_filter}
+                ORDER BY date ASC
+            """),
+            params,
+        )
+        return [dict(row) for row in result.mappings().all()]
