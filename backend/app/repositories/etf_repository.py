@@ -151,3 +151,14 @@ class ETFRepository:
             {"etf_id": str(etf_id), "limit": limit},
         )
         return [dict(row) for row in result.mappings().all()]
+    
+
+    async def delete_etf(self, etf_id: uuid.UUID, session_id: uuid.UUID) -> bool:
+        result = await self._db.execute(
+            text(
+                "DELETE FROM etfs WHERE id = :id AND session_id = :session_id "
+                "RETURNING id"
+            ),
+            {"id": str(etf_id), "session_id": str(session_id)},
+        )
+        return result.first() is not None

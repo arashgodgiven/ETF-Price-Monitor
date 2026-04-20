@@ -71,6 +71,15 @@ export const etfApi = createApi({
         { type: "ETF", id: `${etfId}-holdings` },
       ],
     }),
+
+    // Delete ETF ---------------------------------------------
+    deleteETF: builder.mutation<void, string>({
+      query: (etfId) => ({
+        url: `/etf/${etfId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Session"],
+    }),
   }),
 });
 
@@ -81,4 +90,5 @@ export const {
   useGetETFSummaryQuery,
   useGetPriceHistoryQuery,
   useGetTopHoldingsQuery,
+  useDeleteETFMutation,
 } = etfApi;

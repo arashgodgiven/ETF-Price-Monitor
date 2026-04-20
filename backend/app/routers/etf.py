@@ -126,3 +126,17 @@ async def get_top_holdings(
 		raise InvalidCSVError("limit must be between 1 and 20.")
 	service = ETFService(db)
 	return await service.get_top_holdings(etf_id, limit)
+
+
+@router.delete(
+    "/{etf_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete an ETF from the current session",
+)
+async def delete_etf(
+    etf_id: uuid.UUID,
+    session_id: uuid.UUID = Depends(get_or_create_session),
+    db: AsyncSession = Depends(get_db_session),
+) -> None:
+    service = ETFService(db)
+    await service.delete_etf(etf_id, session_id)

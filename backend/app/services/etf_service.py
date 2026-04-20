@@ -228,3 +228,20 @@ class ETFService:
             )
 
         return df[["name", "weight"]].copy()
+    
+    # ─────────────────────────────────────────
+    # Delete ETF
+    # ─────────────────────────────────────────
+
+    async def delete_etf(
+        self, etf_id: uuid.UUID, session_id: uuid.UUID
+    ) -> None:
+        deleted = await self._repo.delete_etf(etf_id, session_id)
+        if not deleted:
+            raise ETFNotFoundError(
+                f"ETF {etf_id} not found or does not belong to this session."
+            )
+        logger.info(
+            "ETF deleted",
+            extra={"etf_id": str(etf_id)},
+        )

@@ -322,7 +322,6 @@ export function HoldingsTable({ etfId }: Props) {
   return (
     <div className={styles.wrapper}>
       <div className={styles.header}>
-        {/* <h2 className={styles.title}>{data.name} — Constituents</h2> */}
         <h2 className={styles.title}>Constituents</h2>
         <span className={styles.badge}>{totalCount} holdings</span>
       </div>
