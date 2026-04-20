@@ -44,14 +44,14 @@ export function TopHoldingsChart({ etfId, limit = 5 }: Props) {
       <div className={styles.header}>
         <div>
           <h2 className={styles.title}>
-            {data.etf_name} — Top {limit} Holdings
+            Top {limit} Holdings
           </h2>
           <p className={styles.subtitle}>As of {formatDate(data.as_of_date)}</p>
         </div>
       </div>
 
-      <ResponsiveContainer width="100%" height={260}>
-        <BarChart data={chartData} margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
+      <ResponsiveContainer width="100%" height={360}>
+        <BarChart data={chartData} margin={{ top: 40, right: 0, left: -30, bottom: 4 }}>
           <CartesianGrid
             strokeDasharray="3 3"
             vertical={false}
