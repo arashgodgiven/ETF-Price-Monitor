@@ -86,10 +86,11 @@ export function TopHoldingsChart({ etfId, limit = 5 }: Props) {
               const d = payload[0].payload;
               return (
                 <div className={styles.tooltip}>
-                  <p className={styles.tooltipStockName}>{d.stock_name}</p>
+                  <p className={styles.tooltipTicker}>{d.stock_name}</p>
                   <p>Holding size: <strong>{formatCurrency(d.holding_size)}</strong></p>
                   <p>Weight: <strong>{formatPercent(d.weight)}</strong></p>
                   <p>Latest price: <strong>{formatCurrency(d.latest_price)}</strong></p>
+                  <p className={styles.tooltipHint}>Double-click to view price history</p>
                 </div>
               );
             }}

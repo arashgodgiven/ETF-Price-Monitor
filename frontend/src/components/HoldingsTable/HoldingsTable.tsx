@@ -124,18 +124,27 @@ function SortableRow({
       className={styles.clickableRow}
     >
       <td className={styles.dragCell}>
-        <button
-          className={styles.dragHandle}
-          {...attributes}
-          {...listeners}
-          title="Drag to reorder"
-        >
-          ⠿
-        </button>
+        <span className={styles.dragWrapper}>
+          <button
+            className={styles.dragHandle}
+            {...attributes}
+            {...listeners}
+          >
+            ⠿
+          </button>
+          <span className={styles.stockHint}>Drag to reorder</span>
+        </span>
       </td>
       <td>
         {colVisible.stock_name && (
-          <span className={styles.stock_name}>{constituent.stock_name}</span>
+          <span className={styles.stockNameWrapper}>
+            <span className={styles.stock_name}>
+              {constituent.stock_name}
+            </span>
+            <span className={styles.stockHint}>
+              Double-click to view price history
+            </span>
+          </span>
         )}
       </td>
       <td className={styles.right}>
