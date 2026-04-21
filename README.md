@@ -158,7 +158,15 @@ ETF-Price-Monitor/
 │   │       ├── top_holding_schema.py
 │   │       └── health_schema.py
 │   └── tests/
-│       └── test_etf_service.py        # Service unit tests (no DB required)
+│       ├── conftest.py                # Shared fixtures
+│       ├── unit/
+│       │   └── test_csv_validation.py # 27 unit tests — CSV validation, no DB required
+│       └── integration/
+│           ├── conftest.py            # DB setup fixtures
+│           ├── test_etf_upload.py     # Upload endpoint tests
+│           ├── test_etf_session.py    # Session endpoint tests
+│           ├── test_etf_endpoints.py  # Summary, price history, top holdings, delete
+│           └── test_health_router.py  # Health endpoint tests
 │
 ├── frontend/
 │   └── src/
@@ -270,10 +278,34 @@ ORDER BY p.date ASC
 ```bash
 cd backend
 pip install -r requirements.txt
-pytest tests/ -v
+pip install pytest pytest-asyncio httpx psycopg2-binary
 ```
 
-Tests cover CSV validation edge cases at the service layer — no DB required.
+### Unit tests — no DB required, runs anywhere
+
+```bash
+python -m pytest tests/unit/ -v
+```
+
+27 tests covering CSV validation — missing columns, invalid weights, null values, malformed files, stock name length limits.
+
+### Integration tests — requires running Postgres
+
+```bash
+# Start the DB
+docker compose up db -d
+
+# Create the test database
+docker exec -it etf_db psql -U etf_user -d postgres -c "CREATE DATABASE etf_monitor_test;"
+
+# Set the test DB URL
+export TEST_DATABASE_URL=postgresql+asyncpg://etf_user:etf_password@localhost:5432/etf_monitor_test
+
+# Run integration tests
+python -m pytest tests/integration/ -v
+```
+
+Integration tests cover all 8 API endpoints — upload, session, summary, price history, top holdings, delete, stock price history, and health. Requires `pytest-asyncio==0.23.6`.
 
 ---
 
