@@ -13,8 +13,6 @@ logger = get_logger(__name__)
 
 _settings = get_settings()
 
-# pool_size/max_overflow sized for a single-worker deployment
-# scale down if running multiple uvicorn workers to avoid connection exhaustion
 engine = create_async_engine(
     _settings.database_url,
     pool_size=10,
