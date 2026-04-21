@@ -1,5 +1,8 @@
 import io
 import uuid
+import asyncio
+from functools import partial
+
 from datetime import date
 
 import pandas as pd
@@ -40,7 +43,12 @@ class ETFService:
         filename: str,
         session_id: uuid.UUID,
     ) -> ETFSummarySchema:
-        df = self._parse_and_validate_csv(file_bytes, filename)
+        loop = asyncio.get_running_loop()
+        df = await loop.run_in_executor(
+            None,
+            partial(self._parse_and_validate_csv, file_bytes, filename)
+        )
+
         stock_names = df["name"].str.upper().tolist()
 
         known_stock_names = await self._repo.get_known_stock_names()
@@ -147,8 +155,7 @@ class ETFService:
             raise ETFNotFoundError(f"ETF {etf_id} not found.")
 
         rows = await self._repo.get_top_holdings(etf_id, limit)
-        from datetime import date as date_type
-        as_of = rows[0]["as_of_date"] if rows else date_type.today()
+        as_of = rows[0]["as_of_date"] if rows else date.today()
 
         return ETFTopHoldingsSchema(
             etf_id=etf_id,
