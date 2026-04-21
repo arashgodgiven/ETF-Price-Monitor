@@ -308,18 +308,3 @@ python -m pytest tests/integration/ -v
 Integration tests cover all 8 API endpoints — upload, session, summary, price history, top holdings, delete, stock price history, and health. Requires `pytest-asyncio==0.23.6`.
 
 ---
-
-## Development (without Docker)
-
-```bash
-# Backend
-cd backend
-pip install -r requirements.txt
-DATABASE_URL=postgresql+asyncpg://etf_user:etf_password@localhost:5432/etf_monitor \
-  uvicorn app.main:app --reload
-
-# Frontend
-cd frontend
-npm install
-npm run dev   # proxies /api to localhost:8000 via vite.config.ts
-```

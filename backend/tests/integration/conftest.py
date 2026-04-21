@@ -13,14 +13,12 @@ TEST_DATABASE_URL = os.getenv(
     "postgresql+asyncpg://etf_user:etf_password@localhost:5432/etf_monitor_test",
 )
 
-# Sync URL for setup — same DB, sync driver
 TEST_DATABASE_URL_SYNC = TEST_DATABASE_URL.replace("+asyncpg", "")
 
 os.environ["DATABASE_URL"] = TEST_DATABASE_URL
 
-from app.main import create_app  # noqa: E402
+from app.main import create_app
 
-# ── One-time sync setup — runs when module is imported ──────────
 def _setup_db():
     engine = create_engine(TEST_DATABASE_URL_SYNC)
     with engine.begin() as conn:
@@ -76,9 +74,8 @@ def _setup_db():
     print("✓ Test DB ready")
 
 
-_setup_db()  # runs once when conftest is imported
+_setup_db()
 
-# ── Async cleanup engine ────────────────────────────────────────
 _async_engine = create_async_engine(TEST_DATABASE_URL, echo=False)
 
 
@@ -92,6 +89,5 @@ async def client() -> AsyncGenerator[AsyncClient, None]:
     ) as ac:
         yield ac
 
-    # Clean up ETF data after each test — prices stay
     async with _async_engine.begin() as conn:
         await conn.execute(text("DELETE FROM etfs"))
