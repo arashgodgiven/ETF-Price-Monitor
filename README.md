@@ -86,33 +86,32 @@ open http://localhost:8000/api/docs
 
 ## Architecture
 
-┌─────────────────────────────────────────────────────────────────┐
-│  Browser                                                        │
-│  React 18 + Redux Toolkit + RTK Query + Recharts + dnd-kit      │
-└───────────────────────┬─────────────────────────────────────────┘
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Browser                                                    │
+│  React 18 + Redux Toolkit + RTK Query + Recharts + dnd-kit  │
+└───────────────────────┬─────────────────────────────────────┘
                         │  HTTPS
-┌───────────────────────▼─────────────────────────────────────────┐
-│  Backend (Render)                                               │
-│  FastAPI + asyncpg + SQLAlchemy (async)                         │
-│  ┌──────────┐  ┌─────────────┐  ┌──────────────────────────┐    │
-│  │  Routers │→ │ETF Service  │→ │  Repository              │    │
-│  │(HTTP only│  │(logic only) │  │  (SQL only)              │    │
-│  └──────────┘  └─────────────┘  └───────────┬──────────────┘    │
-└─────────────────────────────────────────────┼───────────────────┘
+┌───────────────────────▼─────────────────────────────────────┐
+│  Backend (Render)                                           │
+│  FastAPI + asyncpg + SQLAlchemy (async)                     │
+│  ┌──────────┐  ┌─────────────┐  ┌──────────────────────┐    │
+│  │  Routers │→ │ETF Service  │→ │  Repository          │    │
+│  │(HTTP only│  │(logic only) │  │  (SQL only)          │    │
+│  └──────────┘  └─────────────┘  └───────────┬──────────┘    │
+└─────────────────────────────────────────────┼───────────────┘
                                               │     
-┌─────────────────────────────────────────────▼───────────────────┐
-│  Database (Render Postgres)                                     │
-│  prices · etfs · etf_constituents                               │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────▼───────────────┐
+│  Database (Render Postgres)                                 │
+│  prices · etfs · etf_constituents                           │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ### Why these technology choices?
 
 **Local development:** TimescaleDB (Postgres extension) with hypertable partitioning on the prices table
 
 **Production:** Standard Postgres on Render free tier — TimescaleDB not available on managed free-tier Postgres. At current data scale (2,600 rows) there is no performance difference. The natural upgrade path is Timescale Cloud when the dataset grows to millions of rows.
-
-| Price history queries | Standard Postgres index scan | Migrate to Timescale Cloud for hypertable chunk exclusion at scale |
-
 
 **FastAPI over Flask/Django**
 Native async, automatic OpenAPI docs, and first-class Pydantic integration. The async session pool (`asyncpg`) means a single worker handles many concurrent requests under I/O load.
@@ -133,6 +132,7 @@ A `session_id` UUID cookie scoped to `etfs` rows is the minimum viable persisten
 
 ## Project Structure
 
+```
 ETF-Price-Monitor/
 ├── backend/
 │   ├── app/
@@ -181,7 +181,7 @@ ETF-Price-Monitor/
     └── init/
         ├── 01_schema.sql              # Schema creation (idempotent)
         └── 02_seed.sql                # Unpivots prices.csv wide→long, seeds once
-
+```
 
 ---
 
@@ -227,7 +227,27 @@ ORDER BY p.date ASC
 2. **Prices CSV is authoritative** — uploading an ETF with an unknown stock name is rejected with a `422` error and a clear message.
 3. **Weight validation** — each weight must be `> 0` and `≤ 1`. Weights don't need to sum exactly to 1.0.
 4. **No authentication** — users are identified by an anonymous `session_id` cookie. Adding JWT auth requires changing only the `get_or_create_session` dependency.
-5. **Proportional rebalancing on delete** — when a constituent is deleted, remaining weights are rebalanced proportionally.
+<!-- 5. **Proportional rebalancing on delete** — when a constituent is deleted, remaining weights are rebalanced proportionally. -->
+
+---
+
+## Future Improvements
+
+### Planned Features
+- **Proportional weight rebalancing on delete** — when a constituent is deleted from an ETF, remaining weights are automatically rebalanced proportionally so they continue to sum to 1.0
+- **Hide row** — toggle individual row visibility in the holdings table without removing the constituent
+- **Pin row to top** — pin a specific constituent to always appear at the top of the table regardless of sort order
+- **Inline editing** — edit constituent weights directly in the table; recalculates price chart and top holdings in real time
+- **Multi-row selection** — select multiple constituents and view their combined or overlaid price histories on the chart
+- **Authentication** — replace anonymous session cookies with JWT-based auth; `session_id` in the DB schema becomes a `user_id` FK — the only required code change is swapping the `get_or_create_session` dependency in `routers/etf.py`
+
+### Infrastructure
+- **TimescaleDB in production** — migrate from Render Postgres to Timescale Cloud for hypertable chunk exclusion at scale; no application code changes required
+- **PgBouncer connection pooling** — add a connection pooler between backend instances and the DB for horizontal scaling
+- **Rate limiting** — add per-IP rate limiting on the upload endpoint using `slowapi` to prevent abuse
+- **Security headers** — add `X-Content-Type-Options`, `X-Frame-Options`, and `Content-Security-Policy` response headers
+- **Kubernetes deployment** — migrate from Docker Compose to K8s manifests with HPA for auto-scaling under load
+- **Market data ingestion** — replace the seeded CSV with a real-time market data feed (Kafka consumer writing to the prices hypertable)
 
 ---
 
@@ -241,6 +261,7 @@ ORDER BY p.date ASC
 | Session state | DB-backed cookie | Swap `get_or_create_session` for JWT — no other changes |
 | Price data source | Seeded CSV | Replace seed with market data ingestion job (Kafka consumer) |
 | Logging | Structured JSON to stdout | Ship to Datadog / CloudWatch via log driver — zero code changes |
+| Price history queries | Standard Postgres index scan | Migrate to Timescale Cloud for hypertable chunk exclusion at scale |
 
 ---
 
