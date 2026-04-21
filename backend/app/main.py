@@ -46,7 +46,7 @@ def create_app() -> FastAPI:
 		CORSMiddleware,
 		allow_origins=settings.allowed_origins,
 		allow_credentials=True,
-		allow_methods=["*"], ## Check if OK
+		allow_methods=["GET", "POST", "DELETE"],
 		allow_headers=["*"], ## Check if OK
 	)
 	app.add_middleware(GZipMiddleware, minimum_size=1000)

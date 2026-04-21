@@ -12,3 +12,8 @@ frontend/dist/
 
 # Docker
 postgres_data/
+
+# Virtual environment
+.venv
+venv
+env
