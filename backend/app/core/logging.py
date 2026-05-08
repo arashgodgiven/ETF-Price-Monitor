@@ -15,7 +15,7 @@ def configure_logging() -> None:
 
 	if settings.is_production:
 		formatter = jsonlogger.JsonFormatter(
-			fmt="%(ascctime)s %(name)s %(levelname)s %(message)s",
+			fmt="%(asctime)s %(name)s %(levelname)s %(message)s",
 			datefmt="%Y-%m-%dT%H:%M:%S",
 		)
 	else:
